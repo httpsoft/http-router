@@ -1,6 +1,6 @@
 {
     "name": "httpsoft/http-router",
-    "description": "Simple and fast HTTP request router",
+    "description": "Simple and fast HTTP request router providing PSR-7 and PSR-15",
     "keywords": ["php", "http", "psr-7", "psr-15", "http-router", "router", "route"],
     "homepage": "https://httpsoft.org/",
     "type": "library",
@@ -22,6 +22,7 @@
         "php": "^7.4|^8.0"
     },
     "require-dev": {
+        "httpsoft/http-message": "^1.0",
         "phpunit/phpunit": "^9.3",
         "squizlabs/php_codesniffer": "^3.5",
         "vimeo/psalm": "^3.14"
