@@ -19,7 +19,8 @@
         "docs": "https://httpsoft.org/docs/router"
     },
     "require": {
-        "php": "^7.4|^8.0"
+        "php": "^7.4|^8.0",
+        "httpsoft/http-runner": "^1.0"
     },
     "require-dev": {
         "httpsoft/http-message": "^1.0",
