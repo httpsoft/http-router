@@ -56,12 +56,12 @@ class InvalidRouteParameterException extends InvalidArgumentException
     }
 
     /**
-     * @param mixed $parameter
+     * @param string $name
      * @return self
      */
-    public static function forNotPassed($parameter): self
+    public static function forNotPassed(string $name): self
     {
-        return self::forType($parameter, 'The value of the required parameter "%s" is not passed or is null.');
+        return new self(sprintf('The value of the required parameter "%s" is not passed or is null.', $name));
     }
 
     /**
