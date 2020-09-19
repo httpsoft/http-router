@@ -16,6 +16,7 @@ use StdClass;
 use function array_map;
 use function is_array;
 use function strtoupper;
+use function trim;
 
 class RouteTest extends TestCase
 {
@@ -45,6 +46,7 @@ class RouteTest extends TestCase
         $this->assertSame([], $route->getTokens());
         $this->assertSame([], $route->getDefaults());
         $this->assertSame([], $route->getMatchedParameters());
+        $this->assertNull($route->getHost());
     }
 
     public function testGettersWithParametersPassedToConstructorAndSetters(): void
@@ -53,6 +55,7 @@ class RouteTest extends TestCase
         $route
             ->tokens($tokens = ['slug' => '[\w\-]+', 'format' => '\.[a-zA-z]{3,}'])
             ->defaults($defaults = ['format' => '.html'])
+            ->host($host = 'example.com')
         ;
         $this->assertSame($name, $route->getName());
         $this->assertSame($pattern, $route->getPattern());
@@ -61,6 +64,7 @@ class RouteTest extends TestCase
         $this->assertSame($tokens, $route->getTokens());
         $this->assertSame($defaults, $route->getDefaults());
         $this->assertSame([], $route->getMatchedParameters());
+        $this->assertSame($host, $route->getHost());
     }
 
     /**
@@ -311,6 +315,21 @@ class RouteTest extends TestCase
         $this->assertFalse($route->isAllowedMethod('OPTIONS'));
     }
 
+    public function testHost(): void
+    {
+        $route = (new Route('test', '/path', $this->handler))->host($host = '');
+        $this->assertSame($host, $route->getHost());
+
+        $route = (new Route('test', '/path', $this->handler))->host($host = 'example.com');
+        $this->assertSame($host, $route->getHost());
+
+        $route = (new Route('test', '/path', $this->handler))->host($host = '///example.com///');
+        $this->assertSame(trim($host, '/'), $route->getHost());
+
+        $route = (new Route('test', '/path', $this->handler))->host($regexp = '(?:[\w-]+.)?.example.com');
+        $this->assertSame($regexp, $route->getHost());
+    }
+
     /**
      * @return array
      */
@@ -371,10 +390,10 @@ class RouteTest extends TestCase
      * @param array $optional
      * @param bool $isSuccess
      */
-    public function testMatch(array $require, array $optional, bool $isSuccess): void
+    public function testMatchWithoutHost(array $require, array $optional, bool $isSuccess): void
     {
         $matched = ['require' => $require['value'], 'optional' => $optional['value']];
-        $route = (new Route($name = 'test', $pattern = "/page/{require}{[optional]}", $this->handler));
+        $route = (new Route($name = 'test', $pattern = '/page/{require}{[optional]}', $this->handler));
         $uri = new Uri("/page/{$require['value']}" . (isset($optional['value']) ? '/' . $optional['value'] : ''));
 
         if (isset($require['token'])) {
@@ -401,7 +420,40 @@ class RouteTest extends TestCase
     /**
      * @return array
      */
-    public function generateProvider(): array
+    public function matchHostProvider(): array
+    {
+        return [
+            '127.0.0.1' => ['127.0.0.1', 'http://127.0.0.1'],
+            'ip-dynamic' => ['(?:[0-9]{1,3}[\.]){3}[0-9]{1,3}', 'http://127.0.0.1'],
+            'example.com' => ['example.com', 'https://example.com'],
+            'example.com/' => ['example.com/', 'https://example.com/'],
+            '//example.com/' => ['//example.com/', 'https://example.com/'],
+            '///example.com///' => ['///example.com///', 'https://example.com'],
+            'subdomains' => ['(?:[\w-]+).(?:[\w-]+).example.com', 'https://one.two.example.com'],
+            'subdomain-optional' => ['(?:[\w-]+.)?example.com', 'https://example.com'],
+            'subdomain-static' => ['subdomain.example.com', 'https://subdomain.example.com'],
+            'subdomain-valid-pattern' => [
+                '(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?).example.com',
+                'https://subdomain.example.com'
+            ]
+        ];
+    }
+
+    /**
+     * @dataProvider matchHostProvider
+     * @param string $host
+     * @param string $uri
+     */
+    public function testMatchWithHost(string $host, string $uri): void
+    {
+        $route = (new Route('test', '/', $this->handler))->host($host);
+        $this->assertTrue($route->match($this->request->withUri(new Uri($uri))));
+    }
+
+    /**
+     * @return array
+     */
+    public function pathProvider(): array
     {
         return [
             'home' => ['/', '/', []],
@@ -455,7 +507,7 @@ class RouteTest extends TestCase
     }
 
     /**
-     * @dataProvider generateProvider
+     * @dataProvider pathProvider
      * @param string $pattern
      * @param string $uri
      * @param array $params
@@ -463,7 +515,7 @@ class RouteTest extends TestCase
      * @param array $defaults
      * @param bool $isSuccess
      */
-    public function testGenerate(
+    public function testPath(
         string $pattern,
         string $uri,
         array $params,
@@ -486,6 +538,91 @@ class RouteTest extends TestCase
             $this->expectException(InvalidRouteParameterException::class);
         }
 
-        $this->assertSame((string) $uri, $route->generate($params));
+        $this->assertSame((string) $uri, $route->path($params));
+    }
+
+    public function testUrlWithoutHost(): void
+    {
+        $route = (new Route($name = 'test', $pattern = '/blog/{slug}', $this->handler));
+
+        $this->assertSame($name, $route->getName());
+        $this->assertSame($pattern, $route->getPattern());
+        $this->assertSame($this->handler, $route->getHandler());
+
+        $this->assertSame('/blog/post-slug', $route->url(['slug' => 'post-slug']));
+        $this->assertSame('/blog/post-slug', $route->url(['slug' => 'post-slug'], true));
+        $this->assertSame('/blog/post-slug', $route->url(['slug' => 'post-slug'], false));
+    }
+
+    public function testUrlWithHost(): void
+    {
+        $route = (new Route('test', '/', $this->handler))->host('example.com');
+        $this->assertSame('//example.com', $route->url());
+
+        $route = (new Route('test', '/', $this->handler))->host('//example.com/');
+        $this->assertSame('//example.com', $route->url());
+
+        $route = (new Route('test', '/', $this->handler))->host('example.com');
+        $this->assertSame('https://example.com', $route->url([], true));
+
+        $route = (new Route('test', '/', $this->handler))->host('///example.com///');
+        $this->assertSame('http://example.com', $route->url([], false));
+
+        $route = (new Route('test', '/blog/{slug}', $this->handler))->host('example.com');
+        $this->assertSame('//example.com/blog/post-slug', $route->url(['slug' => 'post-slug']));
+
+        $route = (new Route('test', '/blog/{slug}', $this->handler))->host('//example.com/');
+        $this->assertSame('//example.com/blog/post-slug', $route->url(['slug' => 'post-slug']));
+
+        $route = (new Route('test', '/blog/{slug}', $this->handler))->host('//example.com////');
+        $this->assertSame('//example.com/blog/post-slug', $route->url(['slug' => 'post-slug']));
+
+        $route = (new Route('test', '/blog/{slug}', $this->handler))->host('example.com');
+        $this->assertSame('https://example.com/blog/post-slug', $route->url(['slug' => 'post-slug'], true));
+
+        $route = (new Route('test', '/blog/{slug}', $this->handler))->host('///example.com///');
+        $this->assertSame('http://example.com/blog/post-slug', $route->url(['slug' => 'post-slug'], false));
+    }
+
+    /**
+     * @return array
+     */
+    public function invalidUriProvider(): array
+    {
+        return [
+            'not-scalar-array' => [ ['require' => 'slug', 'optional' => [1]] ],
+            'not-scalar-object' => [ ['require' => new StdClass()] ],
+            'not-scalar-callable' => [ ['require' => fn() => null] ],
+            'require-not-passed' => [ ['optional' => 123] ],
+            'require-null' => [ ['require' => null, 'optional' => 123] ],
+            'require-failure' => [ ['require' => '/slug', 'optional' => 123] ],
+            'optional-failure' => [ ['require' => 'slug', 'optional' => 'slug'] ],
+        ];
+    }
+
+    /**
+     * @dataProvider invalidUriProvider
+     * @param array $parameters
+     */
+    public function testPathThrowExceptionForInvalidRouteParameter(array $parameters): void
+    {
+        $route = (new Route('page', '/page/{require}{[optional]}', $this->handler))
+            ->tokens(['require' => '[\w\-]+', 'optional' => '\d+'])
+        ;
+        $this->expectException(InvalidRouteParameterException::class);
+        $route->path($parameters);
+    }
+
+    /**
+     * @dataProvider invalidUriProvider
+     * @param array $parameters
+     */
+    public function testUrlThrowExceptionForInvalidRouteParameter(array $parameters): void
+    {
+        $route = (new Route('page', '/page/{require}{[optional]}', $this->handler))
+            ->tokens(['require' => '[\w\-]+', 'optional' => '\d+'])
+        ;
+        $this->expectException(InvalidRouteParameterException::class);
+        $route->url($parameters);
     }
 }

@@ -16,6 +16,7 @@ use function preg_match;
 use function preg_replace_callback;
 use function rawurldecode;
 use function strtoupper;
+use function str_replace;
 use function trim;
 
 final class Route
@@ -28,7 +29,12 @@ final class Route
     /**
      * The default regexp pattern for parameter token.
      */
-    private const DEFAULT_TOKEN = '[^/]+';
+    private const DEFAULT_TOKEN = '[^\/]+';
+
+    /**
+     * The default regexp for an empty path pattern or "/".
+     */
+    private const ROOT_PATH_PATTERN = '\/?';
 
     /**
      * @var string unique route name.
@@ -36,7 +42,7 @@ final class Route
     private string $name;
 
     /**
-     * @var string pattern of the parameters.
+     * @var string path pattern with parameters.
      */
     private string $pattern;
 
@@ -61,13 +67,18 @@ final class Route
     private array $defaults = [];
 
     /**
+     * @var string|null hostname or host regexp.
+     */
+    private ?string $host = null;
+
+    /**
      * @var array<string, string> matched parameter names and matched parameter values.
      */
     private array $matchedParameters = [];
 
     /**
      * @param string $name the unique route name.
-     * @param string $pattern the pattern of the parameters.
+     * @param string $pattern the path pattern with parameters.
      * @param mixed $handler the action, controller, callable, closure, etc.
      * @param array $methods allowed request methods of the route.
      * @psalm-suppress MixedAssignment
@@ -98,7 +109,7 @@ final class Route
     }
 
     /**
-     * Gets the pattern of the parameters.
+     * Gets the path pattern with parameters.
      *
      * @return string
      */
@@ -148,9 +159,19 @@ final class Route
     }
 
     /**
+     * Gets the host of the route, or null if no host has been set.
+     *
+     * @return string
+     */
+    public function getHost(): ?string
+    {
+        return $this->host;
+    }
+
+    /**
      * Gets the matched parameters as `parameter names` => `parameter values`.
      *
-     * The matched parameters appear after successful execution of the `match()` method.
+     * The matched parameters appear may after successful execution of the `match()` method.
      *
      * @return array<string, string>
      * @see match()
@@ -208,7 +229,22 @@ final class Route
     }
 
     /**
-     * Matches the request URI to route parameters.
+     * Sets the route host.
+     *
+     * @param string $host hostname or host regexp.
+     * @return self
+     */
+    public function host(string $host): self
+    {
+        $this->host = trim($host, '/');
+        return $this;
+    }
+
+    /**
+     * Checks whether the request URI matches the current route.
+     *
+     * If there is a match and the route has matched parameters, they will
+     * be saved and available via the `Route::getMatchedParameters()` method.
      *
      * @param ServerRequestInterface $request
      * @return bool whether the route matches the request URI.
@@ -217,14 +253,18 @@ final class Route
      */
     public function match(ServerRequestInterface $request): bool
     {
-        $pattern = (string) preg_replace_callback(self::PLACEHOLDER, function (array $matches): string {
+        if ($this->host && !$this->isMatchedHost($request->getUri()->getHost())) {
+            return false;
+        }
+
+        $pattern = !$this->isRootPath() ? preg_replace_callback(self::PLACEHOLDER, function (array $matches): string {
             $parameter = $matches[1];
 
             return ($this->isOptionalParameter($parameter))
                 ? $this->getPatternOptionalParametersReplacement($parameter)
                 : $this->getPatternParameterReplacement($parameter)
             ;
-        }, $this->pattern);
+        }, $this->pattern) : self::ROOT_PATH_PATTERN;
 
         if (preg_match('~^' . $pattern . '$~i', rawurldecode($request->getUri()->getPath()), $matches)) {
             foreach ($matches as $key => $parameter) {
@@ -248,9 +288,9 @@ final class Route
      * @psalm-suppress MixedArgument
      * @psalm-suppress MixedAssignment
      */
-    public function generate(array $parameters = []): string
+    public function path(array $parameters = []): string
     {
-        return (string) preg_replace_callback(self::PLACEHOLDER, function (array $matches) use ($parameters): string {
+        $path = preg_replace_callback(self::PLACEHOLDER, function (array $matches) use ($parameters): string {
             $parameter = $matches[1];
 
             if (!$this->isOptionalParameter($parameter)) {
@@ -272,6 +312,31 @@ final class Route
 
             return $params;
         }, $this->pattern);
+
+        return ($path && $path[0] !== '/') ? '/' . $path : $path;
+    }
+
+    /**
+     * Generates the URL from the route parameters.
+     *
+     * @param array $parameters parameter-value set.
+     * @param bool|null $secure If `true`, then `https`. If `false`, then `http`. If `null`, then without the protocol.
+     * @return string URL generated.
+     * @throws InvalidRouteParameterException if parameter value does not match its regexp or require parameter is null.
+     */
+    public function url(array $parameters = [], bool $secure = null): string
+    {
+        $path = $this->path($parameters);
+
+        if (!$this->host) {
+            return $path;
+        }
+
+        if ($secure === null) {
+            return '//' . $this->host . ($path === '/' ? '' : $path);
+        }
+
+        return ($secure ? 'https' : 'http') . '://' . $this->host . ($path === '/' ? '' : $path);
     }
 
     /**
@@ -359,6 +424,17 @@ final class Route
     }
 
     /**
+     * Checks matches the request URI host to route host.
+     *
+     * @param string $requestUriHost
+     * @return bool
+     */
+    private function isMatchedHost(string $requestUriHost): bool
+    {
+        return (bool) preg_match('~^' . str_replace('.', '\\.', (string) $this->host) . '$~i', $requestUriHost);
+    }
+
+    /**
      * Checks whether the parameter is optional.
      *
      * @param string $parameter
@@ -367,5 +443,15 @@ final class Route
     private function isOptionalParameter(string $parameter): bool
     {
         return $parameter[0] === '[';
+    }
+
+    /**
+     * Checks whether the path pattern is root.
+     *
+     * @return bool
+     */
+    private function isRootPath(): bool
+    {
+        return ($this->pattern === '' || $this->pattern === '/');
     }
 }
