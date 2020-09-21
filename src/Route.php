@@ -8,6 +8,7 @@ use HttpSoft\Router\Exception\InvalidRouteParameterException;
 use Psr\Http\Message\ServerRequestInterface;
 
 use function array_filter;
+use function array_key_exists;
 use function explode;
 use function in_array;
 use function is_scalar;
@@ -303,7 +304,7 @@ final class Route
 
             foreach ($this->parsePatternOptionalParameters($parameter) as $param) {
                 $pattern = $this->tokens[$param] ?? self::DEFAULT_TOKEN;
-                $value = $parameters[$param] ?? $this->defaults[$param] ?? null;
+                $value = array_key_exists($param, $parameters) ? $parameters[$param] : $this->defaults[$param] ?? null;
 
                 if (($normalizeParameter = $this->normalizeParameter($value, $param, $pattern, true)) !== '') {
                     $params .= '/' . $normalizeParameter;
