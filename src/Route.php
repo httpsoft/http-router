@@ -265,6 +265,8 @@ final class Route
      */
     public function match(ServerRequestInterface $request): bool
     {
+        $this->matchedParameters = [];
+
         if ($this->host && !$this->isMatchedHost($request->getUri()->getHost())) {
             return false;
         }
