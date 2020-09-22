@@ -78,9 +78,9 @@ final class Route
     private array $matchedParameters = [];
 
     /**
-     * @param string $name the unique route name.
-     * @param string $pattern the path pattern with parameters.
-     * @param mixed $handler the action, controller, callable, closure, etc.
+     * @param string $name unique route name.
+     * @param string $pattern path pattern with parameters.
+     * @param mixed $handler action, controller, callable, closure, etc.
      * @param array $methods allowed request methods of the route.
      * @psalm-suppress MixedAssignment
      */
@@ -180,6 +180,17 @@ final class Route
     public function getMatchedParameters(): array
     {
         return $this->matchedParameters;
+    }
+
+    /**
+     * Checks whether the request method is allowed for the current route.
+     *
+     * @param string $method
+     * @return bool
+     */
+    public function isAllowedMethod(string $method): bool
+    {
+        return ($this->methods === [] || in_array(strtoupper($method), $this->methods, true));
     }
 
     /**
@@ -285,7 +296,7 @@ final class Route
      *
      * @param array $parameters parameter-value set.
      * @return string URL path generated.
-     * @throws InvalidRouteParameterException if parameter value does not match its regexp or require parameter is null.
+     * @throws InvalidRouteParameterException if the value does not match its regexp or the required parameter is null.
      * @psalm-suppress MixedArgument
      * @psalm-suppress MixedAssignment
      */
@@ -321,9 +332,9 @@ final class Route
      * Generates the URL from the route parameters.
      *
      * @param array $parameters parameter-value set.
-     * @param bool|null $secure If `true`, then `https`. If `false`, then `http`. If `null`, then without the protocol.
+     * @param bool|null $secure if `true`, then `https`. If `false`, then `http`. If `null`, then without the protocol.
      * @return string URL generated.
-     * @throws InvalidRouteParameterException if parameter value does not match its regexp or require parameter is null.
+     * @throws InvalidRouteParameterException if the value does not match its regexp or the required parameter is null.
      */
     public function url(array $parameters = [], bool $secure = null): string
     {
@@ -338,17 +349,6 @@ final class Route
         }
 
         return ($secure ? 'https' : 'http') . '://' . $this->host . ($path === '/' ? '' : $path);
-    }
-
-    /**
-     * Checks whether the request method is allowed for the current route.
-     *
-     * @param string $method
-     * @return bool
-     */
-    public function isAllowedMethod(string $method): bool
-    {
-        return ($this->methods === [] || in_array(strtoupper($method), $this->methods, true));
     }
 
     /**
@@ -399,7 +399,7 @@ final class Route
      * @param string $pattern
      * @param bool $optional
      * @return string
-     * @throws InvalidRouteParameterException if parameter value does not match its regexp or require parameter is null.
+     * @throws InvalidRouteParameterException if the value does not match its regexp or the required parameter is null.
      */
     private function normalizeParameter($value, string $name, string $pattern, bool $optional): string
     {
