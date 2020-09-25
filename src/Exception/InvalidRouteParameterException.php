@@ -81,6 +81,20 @@ class InvalidRouteParameterException extends InvalidArgumentException
     }
 
     /**
+     * @param string $host
+     * @param string $pattern
+     * @return self
+     */
+    public static function forNotHostMatched(string $host, string $pattern): self
+    {
+        return new self(sprintf(
+            'The passed host "%s" of does not match the regexp `%s`.',
+            $host,
+            $pattern
+        ));
+    }
+
+    /**
      * @param mixed $parameter
      * @param string $message
      * @return self

@@ -82,7 +82,7 @@ interface RouteCollectionInterface extends Countable, IteratorAggregate
      *
      * @param string $name name of the route.
      * @param array $parameters parameter-value set.
-     * @param string|null $host host for manual setup.
+     * @param string|null $host host component of the URI.
      * @param bool|null $secure If `true`, then `https`. If `false`, then `http`. If `null`, then without the protocol.
      * @return string URL generated.
      * @throws RouteNotFoundException if the route does not exist.

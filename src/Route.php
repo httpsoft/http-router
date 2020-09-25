@@ -267,7 +267,7 @@ final class Route
     {
         $this->matchedParameters = [];
 
-        if ($this->host && !$this->isMatchedHost($request->getUri()->getHost())) {
+        if (!$this->isMatchedHost($request->getUri()->getHost())) {
             return false;
         }
 
@@ -334,23 +334,30 @@ final class Route
      * Generates the URL from the route parameters.
      *
      * @param array $parameters parameter-value set.
+     * @param string|null $host host component of the URI.
      * @param bool|null $secure if `true`, then `https`. If `false`, then `http`. If `null`, then without the protocol.
      * @return string URL generated.
-     * @throws InvalidRouteParameterException if the value does not match its regexp or the required parameter is null.
+     * @throws InvalidRouteParameterException If the host or the parameter value does not match its regexp.
+     * @psalm-suppress PossiblyNullArgument
      */
-    public function url(array $parameters = [], bool $secure = null): string
+    public function url(array $parameters = [], string $host = null, bool $secure = null): string
     {
         $path = $this->path($parameters);
+        $host = $host ? trim($host, '/') : null;
 
-        if (!$this->host) {
+        if (!$host) {
             return $path;
         }
 
-        if ($secure === null) {
-            return '//' . $this->host . ($path === '/' ? '' : $path);
+        if (!$this->isMatchedHost($host)) {
+            throw InvalidRouteParameterException::forNotHostMatched($host, $this->host);
         }
 
-        return ($secure ? 'https' : 'http') . '://' . $this->host . ($path === '/' ? '' : $path);
+        if ($secure === null) {
+            return '//' . $host . ($path === '/' ? '' : $path);
+        }
+
+        return ($secure ? 'https' : 'http') . '://' . $host . ($path === '/' ? '' : $path);
     }
 
     /**
@@ -427,14 +434,14 @@ final class Route
     }
 
     /**
-     * Checks matches the request URI host to route host.
+     * Checks matches the passed host to route host.
      *
-     * @param string $requestUriHost
+     * @param string $host
      * @return bool
      */
-    private function isMatchedHost(string $requestUriHost): bool
+    private function isMatchedHost(string $host): bool
     {
-        return (bool) preg_match('~^' . str_replace('.', '\\.', (string) $this->host) . '$~i', $requestUriHost);
+        return (!$this->host || preg_match('~^' . str_replace('.', '\\.', $this->host) . '$~i', $host));
     }
 
     /**

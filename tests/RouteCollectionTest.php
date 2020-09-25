@@ -189,7 +189,7 @@ class RouteCollectionTest extends TestCase
         $this->assertNull($this->collection->match($request->withMethod('POST'), false));
     }
 
-    public function testUrl(): void
+    public function testUrlWithoutHost(): void
     {
         $this->collection->set($this->home);
         $this->collection->set($this->page->defaults(['require' => 'default']));
@@ -229,32 +229,34 @@ class RouteCollectionTest extends TestCase
     public function testUrlForRouteWithHost(): void
     {
         $this->collection->set($this->home->host('example.com'));
-        $this->collection->set($this->page->host('example.com')->defaults(['require' => 'default']));
+        $this->collection->set($this->page->host('(?:shop|blog).example.com')->defaults(['require' => 'default']));
 
-        $this->assertSame('//example.com', $this->collection->url('home'));
-        $this->assertSame('//example.com', $this->collection->url('home', [], ''));
-        $this->assertSame('//example.com', $this->collection->url('home', ['any' => 'parameters']));
-        $this->assertSame('//127.0.0.1', $this->collection->url('home', [], '127.0.0.1'));
-        $this->assertSame('//127.0.0.1', $this->collection->url('home', [], '///127.0.0.1///'));
-        $this->assertSame('https://127.0.0.1', $this->collection->url('home', [], '127.0.0.1', true));
-        $this->assertSame('http://127.0.0.1', $this->collection->url('home', [], '//127.0.0.1', false));
+        $this->assertSame('/', $this->collection->url('home'));
+        $this->assertSame('/', $this->collection->url('home', [], ''));
+        $this->assertSame('//example.com', $this->collection->url('home', [], 'example.com'));
+        $this->assertSame('/', $this->collection->url('home', ['any' => 'parameters']));
+        $this->assertSame('//example.com', $this->collection->url('home', ['any' => 'parameters'], '//example.com//'));
+        $this->assertSame('https://example.com', $this->collection->url('home', [], 'example.com', true));
+        $this->assertSame('http://example.com', $this->collection->url('home', [], 'example.com', false));
 
-        $this->assertSame('//example.com/page/default', $this->collection->url('page'));
-        $this->assertSame('//example.com/page/slug', $this->collection->url('page', [
-            'require' => 'slug'
-        ]));
-        $this->assertSame('//example.com/page/slug', $this->collection->url('page', [
+        $this->assertSame('/page/default', $this->collection->url('page'));
+        $this->assertSame('/page/slug', $this->collection->url('page', ['require' => 'slug']));
+
+        $this->assertSame('//shop.example.com/page/slug', $this->collection->url('page', [
             'require' => 'slug', 'optional' => null
-        ]));
-        $this->assertSame('//127.0.0.1/page/slug/0', $this->collection->url('page', [
+        ], 'shop.example.com'));
+        $this->assertSame('//blog.example.com/page/slug/0', $this->collection->url('page', [
             'require' => 'slug', 'optional' => 0
-        ], '127.0.0.1'));
-        $this->assertSame('https://127.0.0.1/page/slug/0', $this->collection->url('page', [
+        ], 'blog.example.com'));
+        $this->assertSame('https://shop.example.com/page/slug/0', $this->collection->url('page', [
             'require' => 'slug', 'optional' => '0'
-        ], '127.0.0.1/', true));
-        $this->assertSame('http://127.0.0.1/page/slug/1', $this->collection->url('page', [
+        ], 'shop.example.com/', true));
+        $this->assertSame('http://blog.example.com/page/slug/1', $this->collection->url('page', [
             'require' => 'slug', 'optional' => 1
-        ], '//127.0.0.1', false));
+        ], '//blog.example.com', false));
+
+        $this->expectException(InvalidRouteParameterException::class);
+        $this->collection->url('page', ['require' => 'slug', 'optional' => 1], 'forum.example.com');
     }
 
     public function testUrlThrowExceptionForRouteNotFound(): void

@@ -550,38 +550,45 @@ class RouteTest extends TestCase
         $this->assertSame($this->handler, $route->getHandler());
 
         $this->assertSame('/blog/post-slug', $route->url(['slug' => 'post-slug']));
-        $this->assertSame('/blog/post-slug', $route->url(['slug' => 'post-slug'], true));
-        $this->assertSame('/blog/post-slug', $route->url(['slug' => 'post-slug'], false));
+        $this->assertSame('/blog/post-slug', $route->url(['slug' => 'post-slug'], null, true));
+        $this->assertSame('/blog/post-slug', $route->url(['slug' => 'post-slug'], '', false));
+        $this->assertSame('//example.com/blog/post-slug', $route->url(['slug' => 'post-slug'], 'example.com'));
+        $this->assertSame(
+            'https://example.com/blog/post-slug',
+            $route->url(['slug' => 'post-slug'], '///example.com', true)
+        );
+        $this->assertSame(
+            'http://example.com/blog/post-slug',
+            $route->url(['slug' => 'post-slug'], 'example.com///', false)
+        );
     }
 
     public function testUrlWithHost(): void
     {
         $route = (new Route('test', '/', $this->handler))->host('example.com');
-        $this->assertSame('//example.com', $route->url());
-
-        $route = (new Route('test', '/', $this->handler))->host('//example.com/');
-        $this->assertSame('//example.com', $route->url());
+        $this->assertSame('/', $route->url());
 
         $route = (new Route('test', '/', $this->handler))->host('example.com');
-        $this->assertSame('https://example.com', $route->url([], true));
+        $this->assertSame('https://example.com', $route->url([], 'example.com', true));
 
         $route = (new Route('test', '/', $this->handler))->host('///example.com///');
-        $this->assertSame('http://example.com', $route->url([], false));
+        $this->assertSame('http://example.com', $route->url([], 'example.com', false));
 
         $route = (new Route('test', '/blog/{slug}', $this->handler))->host('example.com');
-        $this->assertSame('//example.com/blog/post-slug', $route->url(['slug' => 'post-slug']));
-
-        $route = (new Route('test', '/blog/{slug}', $this->handler))->host('//example.com/');
-        $this->assertSame('//example.com/blog/post-slug', $route->url(['slug' => 'post-slug']));
+        $this->assertSame('/blog/post-slug', $route->url(['slug' => 'post-slug']));
 
         $route = (new Route('test', '/blog/{slug}', $this->handler))->host('//example.com////');
-        $this->assertSame('//example.com/blog/post-slug', $route->url(['slug' => 'post-slug']));
+        $this->assertSame('//example.com/blog/post-slug', $route->url(['slug' => 'post-slug'], 'example.com'));
 
-        $route = (new Route('test', '/blog/{slug}', $this->handler))->host('example.com');
-        $this->assertSame('https://example.com/blog/post-slug', $route->url(['slug' => 'post-slug'], true));
+        $route = (new Route('test', '/', $this->handler))->host('(?:shop|blog).example.com');
+        $this->assertSame('https://shop.example.com', $route->url([], 'shop.example.com', true));
 
-        $route = (new Route('test', '/blog/{slug}', $this->handler))->host('///example.com///');
-        $this->assertSame('http://example.com/blog/post-slug', $route->url(['slug' => 'post-slug'], false));
+        $route = (new Route('test', '/', $this->handler))->host('(?:shop|blog).example.com');
+        $this->assertSame('http://blog.example.com', $route->url([], 'blog.example.com', false));
+
+        $route = (new Route('test', '/', $this->handler))->host('(?:shop|blog).example.com');
+        $this->expectException(InvalidRouteParameterException::class);
+        $route->url([], 'forum.example.com');
     }
 
     /**

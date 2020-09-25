@@ -10,7 +10,6 @@ use HttpSoft\Router\Exception\RouteNotFoundException;
 use Psr\Http\Message\ServerRequestInterface;
 
 use function count;
-use function trim;
 
 final class RouteCollection implements RouteCollectionInterface
 {
@@ -133,23 +132,10 @@ final class RouteCollection implements RouteCollectionInterface
 
     /**
      * {@inheritDoc}
-     *
-     * @psalm-suppress PossiblyNullOperand
      */
     public function url(string $name, array $parameters = [], string $host = null, bool $secure = null): string
     {
         $route = $this->get($name);
-        $path = $route->path($parameters);
-        $host = $host ? trim($host, '/') : null;
-
-        if (!$host && !$host = $route->getHost()) {
-            return $path;
-        }
-
-        if ($secure === null) {
-            return '//' . $host . ($path === '/' ? '' : $path);
-        }
-
-        return ($secure ? 'https' : 'http') . '://' . $host . ($path === '/' ? '' : $path);
+        return $route->url($parameters, $host, $secure);
     }
 }
