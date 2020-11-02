@@ -189,6 +189,23 @@ class RouteCollectionTest extends TestCase
         $this->assertNull($this->collection->match($request->withMethod('POST'), false));
     }
 
+    public function testMatchWithoutCheckAllowedMethodsForSamePatternAndNotSameMethod(): void
+    {
+        $handler = fn(): ResponseInterface => new Response();
+        $get = new Route('get', '/test', $handler, ['GET']);
+        $put = new Route('put', '/test', $handler, ['PUT']);
+
+        $this->collection->set($get);
+        $this->collection->set($put);
+        $request = (new ServerRequest())->withUri(new Uri('/test'));
+
+        $this->assertSame($get, $this->collection->match($request->withMethod('GET')));
+        $this->assertSame($get, $this->collection->match($request->withMethod('GET'), false));
+
+        $this->assertSame($put, $this->collection->match($request->withMethod('PUT')));
+        $this->assertSame($put, $this->collection->match($request->withMethod('PUT'), false));
+    }
+
     public function testUrlWithoutHost(): void
     {
         $this->collection->set($this->home);

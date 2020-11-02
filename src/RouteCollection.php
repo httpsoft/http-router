@@ -104,21 +104,23 @@ final class RouteCollection implements RouteCollectionInterface
      */
     public function match(ServerRequestInterface $request, bool $checkAllowedMethods = true): ?Route
     {
+        $routeWithNotAllowedMethod = null;
+
         foreach ($this->routes as $route) {
             if (!$route->match($request)) {
                 continue;
             }
 
-            if (!$checkAllowedMethods) {
-                return $route;
-            }
-
             if ($route->isAllowedMethod($request->getMethod())) {
                 return $route;
             }
+
+            if ($routeWithNotAllowedMethod === null) {
+                $routeWithNotAllowedMethod = $route;
+            }
         }
 
-        return null;
+        return $checkAllowedMethods ? null : $routeWithNotAllowedMethod;
     }
 
     /**
