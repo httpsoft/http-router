@@ -1,5 +1,27 @@
 # HTTP Router Change Log
 
+## 1.0.2 - 2020.11.08
+
+### Added
+
+- Nothing.
+
+### Changed
+
+- Nothing.
+
+### Deprecated
+
+- Nothing.
+
+### Removed
+
+- Nothing.
+
+### Fixed
+
+- Removes redundant spaces in the description of the `README.md` file.
+
 ## 1.0.1 - 2020.11.02
 
 ### Added
