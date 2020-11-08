@@ -66,7 +66,7 @@ Tokens of the route enclosed in `[...]` are considered optional.
 
 ```php
 $router->get('post.list', '/posts{[page]}', $handler)
-    ->tokens(['page' =>  '\d+'])
+    ->tokens(['page' => '\d+'])
 ;
 
 // '/posts/33'
@@ -100,14 +100,14 @@ You can specify routes inside of a group.
 $router->group('/post', static function (RouteCollector $router): void {
     // '/post/post-slug'
     $router->get('post.view', '/{slug}', ViewHandler::class)->tokens(['slug' => '[\w-]+']);
-    // '/post' or '/post/page-14'
-    $router->get('post.list', '{[page]}', ListHandler::class)->tokens(['page' =>  'page-\d+']);
+    // '/post' or '/post/2'
+    $router->get('post.list', '/list{[page]}', ListHandler::class)->tokens(['page' => '\d+']);
 });
 
 // The result will be equivalent to:
 
 $router->get('post.view', '/post/{slug}', ViewHandler::class)->tokens(['slug' => '[\w-]+']);
-$router->get('post.list', '/post{[page]}', ListHandler::class)->tokens(['page' =>  'page-\d+']);
+$router->get('post.list', '/post/list{[page]}', ListHandler::class)->tokens(['page' => '\d+']);
 ```
 
 Check matching routes.
