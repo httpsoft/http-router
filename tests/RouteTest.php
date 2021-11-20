@@ -450,6 +450,12 @@ class RouteTest extends TestCase
         $this->assertTrue($route->match($this->request->withUri(new Uri($uri))));
     }
 
+    public function testNotMatchWithHost(): void
+    {
+        $route = (new Route('test', '/', $this->handler))->host('example.com');
+        $this->assertFalse($route->match($this->request->withUri(new Uri('https://example.org'))));
+    }
+
     /**
      * @return array
      */

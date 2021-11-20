@@ -74,9 +74,9 @@ class RouteMatchMiddlewareTest extends TestCase
 
     public function testProcessSuccessWithAllowedMethods(): void
     {
-        $this->router->post('home', '/', $this->handler);
+        $this->router->post('page', '/{page}', $this->handler);
         $middleware = new RouteMatchMiddleware($this->router, $this->responseFactory, ['GET']);
-        $response = $middleware->process($this->request->withUri(new Uri('/')), $this->requestHandler());
+        $response = $middleware->process($this->request->withUri(new Uri('/test')), $this->requestHandler());
         $this->assertSame(201, $response->getStatusCode());
     }
 
