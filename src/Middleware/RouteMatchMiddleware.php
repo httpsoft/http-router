@@ -32,7 +32,7 @@ final class RouteMatchMiddleware implements MiddlewareInterface
     private ResponseFactoryInterface $responseFactory;
 
     /**
-     * @var array|string[]
+     * @var string[]
      */
     private array $allowedMethods = [];
 
@@ -78,16 +78,13 @@ final class RouteMatchMiddleware implements MiddlewareInterface
     }
 
     /**
-     * @param array $methods
+     * @param string[] $methods
      * @return ResponseInterface
-     * @psalm-suppress MixedAssignment
      */
     private function getEmptyResponseWithAllowedMethods(array $methods): ResponseInterface
     {
         foreach ($this->allowedMethods as $method) {
-            if (is_string($method)) {
-                $methods[] = $method;
-            }
+            $methods[] = $method;
         }
 
         $methods = implode(', ', array_unique(array_filter($methods)));
