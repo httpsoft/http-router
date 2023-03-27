@@ -10,6 +10,9 @@ use HttpSoft\Router\Exception\RouteNotFoundException;
 use IteratorAggregate;
 use Psr\Http\Message\ServerRequestInterface;
 
+/**
+ * @inheritDoc
+ */
 interface RouteCollectionInterface extends Countable, IteratorAggregate
 {
     /**

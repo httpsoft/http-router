@@ -260,8 +260,6 @@ final class Route
      *
      * @param ServerRequestInterface $request
      * @return bool whether the route matches the request URI.
-     * @psalm-suppress MixedArgument
-     * @psalm-suppress MixedAssignment
      */
     public function match(ServerRequestInterface $request): bool
     {
