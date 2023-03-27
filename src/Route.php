@@ -297,7 +297,6 @@ final class Route
      * @param array $parameters parameter-value set.
      * @return string URL path generated.
      * @throws InvalidRouteParameterException if the value does not match its regexp or the required parameter is null.
-     * @psalm-suppress MixedArgument
      * @psalm-suppress MixedAssignment
      */
     public function path(array $parameters = []): string

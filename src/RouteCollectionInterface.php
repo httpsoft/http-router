@@ -11,7 +11,9 @@ use IteratorAggregate;
 use Psr\Http\Message\ServerRequestInterface;
 
 /**
- * @inheritDoc
+ * @template TKey
+ * @template-covariant TValue
+ * @template-implements IteratorAggregate<TKey, TValue>
  */
 interface RouteCollectionInterface extends Countable, IteratorAggregate
 {
