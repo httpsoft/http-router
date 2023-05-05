@@ -1,5 +1,11 @@
 # HTTP Router Change Log
 
+## 1.1.0 - 2023.05.05
+
+### Changed
+
+- [#2](https://github.com/httpsoft/http-router/pull/2) Rises `httpsoft/http-runner` package version to `^1.1`.
+
 ## 1.0.3 - 2020.12.12
 
 ### Added
