@@ -337,7 +337,7 @@ final class Route
      * @throws InvalidRouteParameterException If the host or the parameter value does not match its regexp.
      * @psalm-suppress PossiblyNullArgument
      */
-    public function url(array $parameters = [], string $host = null, bool $secure = null): string
+    public function url(array $parameters = [], ?string $host = null, ?bool $secure = null): string
     {
         $path = $this->path($parameters);
         $host = $host ? trim($host, '/') : null;
