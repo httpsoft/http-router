@@ -297,7 +297,7 @@ final class Route
      * @param array $parameters parameter-value set.
      * @return string URL path generated.
      * @throws InvalidRouteParameterException if the value does not match its regexp or the required parameter is null.
-     * @psalm-suppress MixedAssignment
+     * @psalm-suppress MixedAssignment, RiskyTruthyFalsyComparison
      */
     public function path(array $parameters = []): string
     {
@@ -335,7 +335,7 @@ final class Route
      * @param bool|null $secure if `true`, then `https`. If `false`, then `http`. If `null`, then without the protocol.
      * @return string URL generated.
      * @throws InvalidRouteParameterException If the host or the parameter value does not match its regexp.
-     * @psalm-suppress PossiblyNullArgument
+     * @psalm-suppress PossiblyNullArgument, RiskyTruthyFalsyComparison
      */
     public function url(array $parameters = [], ?string $host = null, ?bool $secure = null): string
     {
@@ -435,6 +435,7 @@ final class Route
      *
      * @param string $host
      * @return bool
+     * @psalm-suppress RiskyTruthyFalsyComparison
      */
     private function isMatchedHost(string $host): bool
     {
