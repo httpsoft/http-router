@@ -19,7 +19,7 @@ final class RouteCollector
     /**
      * @param RouteCollectionInterface|null $routes
      */
-    public function __construct(RouteCollectionInterface $routes = null)
+    public function __construct(?RouteCollectionInterface $routes = null)
     {
         $this->routes = $routes ?? new RouteCollection();
     }

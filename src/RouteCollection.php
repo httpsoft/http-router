@@ -135,7 +135,7 @@ final class RouteCollection implements RouteCollectionInterface
     /**
      * {@inheritDoc}
      */
-    public function url(string $name, array $parameters = [], string $host = null, bool $secure = null): string
+    public function url(string $name, array $parameters = [], ?string $host = null, ?bool $secure = null): string
     {
         $route = $this->get($name);
         return $route->url($parameters, $host, $secure);

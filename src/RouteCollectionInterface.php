@@ -90,5 +90,5 @@ interface RouteCollectionInterface extends Countable, IteratorAggregate
      * @return string URL generated.
      * @throws RouteNotFoundException if the route does not exist.
      */
-    public function url(string $name, array $parameters = [], string $host = null, bool $secure = null): string;
+    public function url(string $name, array $parameters = [], ?string $host = null, ?bool $secure = null): string;
 }
